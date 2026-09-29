@@ -54,6 +54,8 @@ const dice3d = {
     lastFrameTime: 0,
     physicsSteps: 0,
     targetPhysicsSteps: 0,
+    replayAccumulator: 0,
+    recordedFrames: [],
     phase: "idle",
     pendingResults: [],
     resizeObserver: null,
@@ -1006,26 +1008,30 @@ function secureRandomInt(max) {
 function start3DRoll(results, physicalResults) {
     if (dice3d.dice.length !== physicalResults.length) rebuildDiceScene();
     dice3d.pendingResults = [...results];
-    dice3d.phase = "physics";
+    dice3d.phase = "replay";
     dice3d.physicsSteps = 0;
+    dice3d.replayAccumulator = 0;
     dice3d.lastFrameTime = 0;
 
     const launchPlans = createLaunchPlans(physicalResults.length);
-    const preview = previewPhysicsRoll(launchPlans);
-    dice3d.targetPhysicsSteps = preview.steps;
+    const recording = recordPhysicsRoll(launchPlans);
+    const finalFrame = recording.frames[recording.frames.length - 1];
+    dice3d.recordedFrames = recording.frames;
+    dice3d.targetPhysicsSteps = recording.frames.length - 1;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 
     dice3d.dice.forEach((die, index) => {
-        const predictedFaceIndex = getTopFaceIndex(die.spec, preview.states[index].quaternion);
+        const predictedFaceIndex = getTopFaceIndex(die.spec, finalFrame[index].quaternion);
         const values = createMappedFaceValues(die.spec.sides, predictedFaceIndex, physicalResults[index]);
         replaceDieVisual(die, values);
-        applyLaunchState(die.body, launchPlans[index]);
     });
+    applyRecordedFrame(recording.frames[0]);
 
     if (reduceMotion) {
-        dice3d.dice.forEach((die, index) => applyFinalPreviewState(die.body, preview.states[index]));
+        applyRecordedFrame(finalFrame);
         dice3d.phase = "idle";
         dice3d.pendingResults = [];
+        dice3d.recordedFrames = [];
         syncDiceMeshes();
         renderDiceFrame();
         setTimeout(() => completeDiceRoll(results), 60);
@@ -1078,7 +1084,7 @@ function applyLaunchState(body, plan) {
     body.wakeUp();
 }
 
-function previewPhysicsRoll(launchPlans) {
+function recordPhysicsRoll(launchPlans) {
     const { world, diceMaterial } = createPhysicsWorld();
     const bodies = dice3d.dice.map((die, index) => {
         const shape = new CANNON.ConvexPolyhedron({
@@ -1099,24 +1105,27 @@ function previewPhysicsRoll(launchPlans) {
         return body;
     });
 
+    const frames = [captureBodyStates(bodies)];
     let steps = 0;
     let quietSteps = 0;
     while (steps < MAX_PHYSICS_STEPS) {
         world.step(PHYSICS_STEP);
         steps += 1;
+        frames.push(captureBodyStates(bodies));
         const quiet = bodies.every((body) => body.velocity.lengthSquared() < 0.0064
             && body.angularVelocity.lengthSquared() < 0.01);
         quietSteps = quiet ? quietSteps + 1 : 0;
         if (steps >= MIN_PHYSICS_STEPS && quietSteps >= 20) break;
     }
 
-    return {
-        steps,
-        states: bodies.map((body) => ({
+    return { frames };
+}
+
+function captureBodyStates(bodies) {
+    return bodies.map((body) => ({
             position: { x: body.position.x, y: body.position.y, z: body.position.z },
             quaternion: { x: body.quaternion.x, y: body.quaternion.y, z: body.quaternion.z, w: body.quaternion.w },
-        })),
-    };
+        }));
 }
 
 function getTopFaceIndex(spec, quaternion) {
@@ -1151,16 +1160,19 @@ function replaceDieVisual(die, faceValues) {
     dice3d.scene.add(nextGroup);
 }
 
-function applyFinalPreviewState(body, stateValue) {
-    body.position.set(stateValue.position.x, stateValue.position.y, stateValue.position.z);
-    body.quaternion.set(
-        stateValue.quaternion.x,
-        stateValue.quaternion.y,
-        stateValue.quaternion.z,
-        stateValue.quaternion.w,
-    );
-    body.velocity.setZero();
-    body.angularVelocity.setZero();
+function applyRecordedFrame(frame) {
+    dice3d.dice.forEach((die, index) => {
+        const stateValue = frame[index];
+        die.body.position.set(stateValue.position.x, stateValue.position.y, stateValue.position.z);
+        die.body.quaternion.set(
+            stateValue.quaternion.x,
+            stateValue.quaternion.y,
+            stateValue.quaternion.z,
+            stateValue.quaternion.w,
+        );
+        die.body.velocity.setZero();
+        die.body.angularVelocity.setZero();
+    });
 }
 
 function requestDiceAnimation() {
@@ -1175,16 +1187,19 @@ function animateDiceFrame(timestamp) {
         : 1 / 60;
     dice3d.lastFrameTime = timestamp;
 
-    if (dice3d.phase === "physics") {
-        const stepsThisFrame = clamp(Math.round(deltaSeconds / PHYSICS_STEP), 1, 3);
-        for (let i = 0; i < stepsThisFrame && dice3d.physicsSteps < dice3d.targetPhysicsSteps; i++) {
-            dice3d.world.step(PHYSICS_STEP);
+    if (dice3d.phase === "replay") {
+        dice3d.replayAccumulator += deltaSeconds;
+        while (dice3d.replayAccumulator >= PHYSICS_STEP
+            && dice3d.physicsSteps < dice3d.targetPhysicsSteps) {
             dice3d.physicsSteps += 1;
+            dice3d.replayAccumulator -= PHYSICS_STEP;
         }
+        applyRecordedFrame(dice3d.recordedFrames[dice3d.physicsSteps]);
         if (dice3d.physicsSteps >= dice3d.targetPhysicsSteps) {
             const results = [...dice3d.pendingResults];
             dice3d.phase = "idle";
             dice3d.pendingResults = [];
+            dice3d.recordedFrames = [];
             completeDiceRoll(results);
         }
     }
