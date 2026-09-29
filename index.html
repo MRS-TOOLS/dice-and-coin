@@ -33,7 +33,9 @@
         ========================================= -->
         <section class="panel is-active" data-panel="dice">
 
-            <div class="stage-area" id="diceStage" aria-live="polite"></div>
+            <div class="stage-area dice-stage" id="diceStage" aria-live="polite">
+                <p class="stage-status">3Dダイスを準備しています…</p>
+            </div>
 
             <div class="result-area" id="diceResultArea">
                 <p class="result-hint">ROLLを押してください</p>
@@ -103,6 +105,18 @@
                         <button class="stepper-btn" data-step="inc" data-target="diceCount" aria-label="個数を増やす">＋</button>
                     </div>
                 </div>
+
+                <div class="setting-group">
+                    <span class="setting-label">ダイスの種類</span>
+                    <div class="dice-type-options" role="group" aria-label="ダイスの種類">
+                        <button class="dice-type-btn" type="button" data-faces="4">D4</button>
+                        <button class="dice-type-btn" type="button" data-faces="6">D6</button>
+                        <button class="dice-type-btn" type="button" data-faces="8">D8</button>
+                        <button class="dice-type-btn" type="button" data-faces="10">D10</button>
+                        <button class="dice-type-btn" type="button" data-faces="12">D12</button>
+                        <button class="dice-type-btn" type="button" data-faces="20">D20</button>
+                    </div>
+                </div>
             </div>
 
             <div class="modal-body" data-settings="coin" hidden>
@@ -155,6 +169,6 @@
 
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
