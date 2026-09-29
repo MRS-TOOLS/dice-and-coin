@@ -27,11 +27,12 @@ const ANIM_MS = 950;
 const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js";
 const CANNON_URL = "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js";
 const PHYSICS_STEP = 1 / 60;
-const MAX_PHYSICS_STEPS = 480;
+const MAX_PHYSICS_STEPS = 420;
 const MIN_PHYSICS_STEPS = 120;
+const MAX_ROLL_ATTEMPTS = 10;
 const TABLE_WIDTH = 7.2;
 const TABLE_DEPTH = 5.2;
-const DIE_RADIUS = 0.7;
+const DIE_RADIUS = 0.64;
 const DICE_COLORS = [
     { body: 0xc93636, edge: 0x762020, ink: "#ffffff" },
     { body: 0x2868c7, edge: 0x163b78, ink: "#ffffff" },
@@ -417,13 +418,18 @@ function createPhysicsWorld() {
     world.solver.iterations = 12;
 
     const floorMaterial = new CANNON.Material("table");
+    const wallMaterial = new CANNON.Material("wall");
     const diceMaterial = new CANNON.Material("dice");
     world.addContactMaterial(new CANNON.ContactMaterial(floorMaterial, diceMaterial, {
         friction: 0.38,
         restitution: 0.38,
     }));
+    world.addContactMaterial(new CANNON.ContactMaterial(wallMaterial, diceMaterial, {
+        friction: 0.08,
+        restitution: 0.38,
+    }));
     world.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, diceMaterial, {
-        friction: 0.26,
+        friction: 0.14,
         restitution: 0.3,
     }));
 
@@ -431,7 +437,7 @@ function createPhysicsWorld() {
     floorBody.addShape(new CANNON.Plane());
     floorBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
     world.addBody(floorBody);
-    addPhysicsWalls(world, floorMaterial);
+    addPhysicsWalls(world, wallMaterial);
     return { world, diceMaterial };
 }
 
@@ -1013,8 +1019,7 @@ function start3DRoll(results, physicalResults) {
     dice3d.replayAccumulator = 0;
     dice3d.lastFrameTime = 0;
 
-    const launchPlans = createLaunchPlans(physicalResults.length);
-    const recording = recordPhysicsRoll(launchPlans);
+    const recording = createSettledRollRecording(physicalResults.length);
     const finalFrame = recording.frames[recording.frames.length - 1];
     dice3d.recordedFrames = recording.frames;
     dice3d.targetPhysicsSteps = recording.frames.length - 1;
@@ -1084,6 +1089,22 @@ function applyLaunchState(body, plan) {
     body.wakeUp();
 }
 
+function createSettledRollRecording(count) {
+    let bestRecording = null;
+    for (let attempt = 0; attempt < MAX_ROLL_ATTEMPTS; attempt++) {
+        const recording = recordPhysicsRoll(createLaunchPlans(count));
+        if (!bestRecording || recording.settleScore > bestRecording.settleScore) {
+            bestRecording = recording;
+        }
+        if (recording.settled) {
+            recording.attempts = attempt + 1;
+            return recording;
+        }
+    }
+    bestRecording.attempts = MAX_ROLL_ATTEMPTS;
+    return bestRecording;
+}
+
 function recordPhysicsRoll(launchPlans) {
     const { world, diceMaterial } = createPhysicsWorld();
     const bodies = dice3d.dice.map((die, index) => {
@@ -1097,8 +1118,7 @@ function recordPhysicsRoll(launchPlans) {
             shape,
             linearDamping: 0.13,
             angularDamping: 0.18,
-            sleepSpeedLimit: 0.08,
-            sleepTimeLimit: 0.35,
+            allowSleep: false,
         });
         applyLaunchState(body, launchPlans[index]);
         world.addBody(body);
@@ -1111,14 +1131,38 @@ function recordPhysicsRoll(launchPlans) {
     while (steps < MAX_PHYSICS_STEPS) {
         world.step(PHYSICS_STEP);
         steps += 1;
+        const alignments = bodies.map((body, index) => getTopFaceAlignment(
+            dice3d.dice[index].spec,
+            body.quaternion,
+        ));
+        bodies.forEach((body, index) => {
+            const isNearlyFlat = alignments[index] >= 0.985;
+            const isMovingSlowly = body.velocity.lengthSquared() < 0.04
+                && body.angularVelocity.lengthSquared() < 0.64;
+            if (isNearlyFlat && isMovingSlowly) {
+                body.angularVelocity.scale(0.78, body.angularVelocity);
+                body.velocity.x *= 0.94;
+                body.velocity.z *= 0.94;
+            }
+        });
         frames.push(captureBodyStates(bodies));
-        const quiet = bodies.every((body) => body.velocity.lengthSquared() < 0.0064
-            && body.angularVelocity.lengthSquared() < 0.01);
+        const quiet = bodies.every((body, index) => alignments[index] >= 0.985
+            && body.velocity.lengthSquared() < 0.0036
+            && body.angularVelocity.lengthSquared() < 0.0064);
         quietSteps = quiet ? quietSteps + 1 : 0;
-        if (steps >= MIN_PHYSICS_STEPS && quietSteps >= 20) break;
+        if (steps >= MIN_PHYSICS_STEPS && quietSteps >= 18) break;
     }
 
-    return { frames };
+    const finalFrame = frames[frames.length - 1];
+    const settleScore = Math.min(...finalFrame.map((stateValue, index) => getTopFaceAlignment(
+        dice3d.dice[index].spec,
+        stateValue.quaternion,
+    )));
+    return {
+        frames,
+        settled: quietSteps >= 18,
+        settleScore,
+    };
 }
 
 function captureBodyStates(bodies) {
@@ -1141,6 +1185,13 @@ function getTopFaceIndex(spec, quaternion) {
         }
     });
     return bestIndex;
+}
+
+function getTopFaceAlignment(spec, quaternion) {
+    const topFaceIndex = getTopFaceIndex(spec, quaternion);
+    const normal = getFaceFrame(spec, spec.faces[topFaceIndex]).normal;
+    const rotation = new CANNON.Quaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+    return rotation.vmult(new CANNON.Vec3(normal.x, normal.y, normal.z)).y;
 }
 
 function createMappedFaceValues(sides, topFaceIndex, desiredValue) {
