@@ -97,7 +97,7 @@
             <div class="modal-body" data-settings="dice">
                 <h2 id="settingsTitle">DICE設定</h2>
 
-                <div class="setting-row">
+                <div class="setting-row" id="diceCountRow">
                     <span class="setting-label">ダイスの個数</span>
                     <div class="stepper">
                         <button class="stepper-btn" data-step="dec" data-target="diceCount" aria-label="個数を減らす">−</button>
@@ -109,12 +109,12 @@
                 <div class="setting-group">
                     <span class="setting-label">ダイスの種類</span>
                     <div class="dice-type-options" role="group" aria-label="ダイスの種類">
-                        <button class="dice-type-btn" type="button" data-faces="4">D4</button>
                         <button class="dice-type-btn" type="button" data-faces="6">D6</button>
                         <button class="dice-type-btn" type="button" data-faces="8">D8</button>
                         <button class="dice-type-btn" type="button" data-faces="10">D10</button>
                         <button class="dice-type-btn" type="button" data-faces="12">D12</button>
                         <button class="dice-type-btn" type="button" data-faces="20">D20</button>
+                        <button class="dice-type-btn" type="button" data-faces="100">D100</button>
                     </div>
                 </div>
             </div>

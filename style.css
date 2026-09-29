@@ -305,6 +305,10 @@ button {
     margin-bottom: 4px;
 }
 
+.result-values--percentile {
+    font-size: 28px;
+}
+
 .result-total {
     color: var(--color-text-muted);
     font-size: 14px;
@@ -545,6 +549,12 @@ button {
     text-align: center;
     font-size: 17px;
     font-weight: 800;
+}
+
+.setting-row.is-fixed .stepper-value {
+    min-width: 76px;
+    color: var(--color-accent);
+    font-size: 14px;
 }
 
 .modal-actions {
