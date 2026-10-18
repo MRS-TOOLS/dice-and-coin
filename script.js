@@ -32,7 +32,7 @@ const MIN_PHYSICS_STEPS = 120;
 const MAX_ROLL_ATTEMPTS = 10;
 const TABLE_WIDTH = 7.2;
 const TABLE_DEPTH = 5.2;
-const DIE_RADIUS = 0.64;
+const DIE_RADIUS = 0.544; // 15% smaller; shared by visual geometry and collision shapes.
 const DICE_COLORS = [
     { body: 0xc93636, edge: 0x762020, ink: "#ffffff" },
     { body: 0x2868c7, edge: 0x163b78, ink: "#ffffff" },
