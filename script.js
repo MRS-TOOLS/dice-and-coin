@@ -36,8 +36,8 @@ const DIE_RADIUS = 0.544; // 15% smaller; shared by visual geometry and collisio
 const COIN_RADIUS = 0.58;
 const COIN_THICKNESS = 0.09;
 const COIN_IMAGES = {
-    heads: "assets/images/washington-quarter-heads.webp",
-    tails: "assets/images/washington-quarter-tails.webp",
+    heads: "assets/images/lincoln-memorial-heads.webp",
+    tails: "assets/images/lincoln-memorial-tails.webp",
 };
 const DICE_COLORS = [
     { body: 0xc93636, edge: 0x762020, ink: "#ffffff" },
@@ -1040,7 +1040,7 @@ function createCoinElement() {
 
     const logo = document.createElement("img");
     logo.src = COIN_IMAGES.heads;
-    logo.alt = "表：ジョージ・ワシントン";
+    logo.alt = "表：エイブラハム・リンカーン";
     logo.className = "coin-logo";
     heads.appendChild(logo);
 
@@ -1048,7 +1048,7 @@ function createCoinElement() {
     tails.className = "coin-face coin-face--tails";
     const reverse = document.createElement("img");
     reverse.src = COIN_IMAGES.tails;
-    reverse.alt = "裏：ワシ";
+    reverse.alt = "裏：リンカーン記念堂";
     reverse.className = "coin-logo";
     tails.appendChild(reverse);
 
@@ -1084,7 +1084,7 @@ async function initCoinEngine() {
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.05;
         renderer.domElement.setAttribute("role", "img");
-        renderer.domElement.setAttribute("aria-label", "緑の盤面上のワシントン・クォーター。表はワシントン、裏はワシ。");
+        renderer.domElement.setAttribute("aria-label", "緑の盤面上のリンカーン・メモリアルペニー。表はリンカーン、裏はリンカーン記念堂。");
         loaded.forEach((texture) => {
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
@@ -1128,22 +1128,12 @@ function resizeCoinRenderer() {
 
 function createCoinVisual() {
     const group = new THREE.Group();
-    const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0xa7a9ab, roughness: 0.38, metalness: 0.7 });
+    const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0xa45c37, roughness: 0.38, metalness: 0.7 });
     const edge = new THREE.Mesh(new THREE.CylinderGeometry(COIN_RADIUS, COIN_RADIUS, COIN_THICKNESS, 64), edgeMaterial);
     edge.castShadow = true;
     edge.receiveShadow = true;
     group.add(edge);
-    // Shallow radial grooves give the edge a minted, reeded finish.
-    const grooves = [];
-    for (let i = 0; i < 100; i += 1) {
-        const angle = i * Math.PI * 2 / 100;
-        const x = Math.cos(angle) * (COIN_RADIUS + 0.001);
-        const z = Math.sin(angle) * (COIN_RADIUS + 0.001);
-        grooves.push(x, -COIN_THICKNESS * 0.35, z, x, COIN_THICKNESS * 0.35, z);
-    }
-    const grooveGeometry = new THREE.BufferGeometry();
-    grooveGeometry.setAttribute("position", new THREE.Float32BufferAttribute(grooves, 3));
-    group.add(new THREE.LineSegments(grooveGeometry, new THREE.LineBasicMaterial({ color: 0x55585b, transparent: true, opacity: 0.6 })));
+    // The penny uses a plain copper edge, without the quarter's reeding.
     const caps = ["heads", "tails"].map((side, index) => {
         const material = new THREE.MeshStandardMaterial({
             map: coin3d.textures[side], roughness: 0.52, metalness: 0.22,
