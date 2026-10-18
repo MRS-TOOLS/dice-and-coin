@@ -266,9 +266,9 @@ button {
 }
 
 .coin-logo {
-    width: 72%;
-    height: 72%;
-    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     border-radius: 50%;
     display: block;
 }
@@ -277,6 +277,21 @@ button {
     background: linear-gradient(155deg, #262626, #141414);
     color: var(--color-text);
     transform: rotateY(180deg);
+}
+
+.coin-stage .coin-face {
+    background: #9c732b;
+    border-color: #b88a40;
+}
+
+.coin-fallback-notice {
+    position: absolute;
+    bottom: 8px;
+    margin: 0;
+    padding: 0 12px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    text-align: center;
 }
 
 /* ========================================
