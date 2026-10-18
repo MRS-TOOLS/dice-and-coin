@@ -280,8 +280,8 @@ button {
 }
 
 .coin-stage .coin-face {
-    background: #9c732b;
-    border-color: #b88a40;
+    background: #8e9194;
+    border-color: #b4b6b8;
 }
 
 .coin-stage.emphasize-sides .coin-face--tails {
