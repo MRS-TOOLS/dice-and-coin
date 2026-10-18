@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_DICE_SETTINGS = { count: 1, faces: 6 };
-const DEFAULT_COIN_SETTINGS = { count: 1 };
+const DEFAULT_COIN_SETTINGS = { count: 1, emphasizeSides: false };
 
 const DICE_TYPES = [6, 8, 10, 12, 20, 100];
 const HISTORY_LIMIT = 10;
@@ -79,7 +79,7 @@ const dice3d = {
 
 const state = {
     diceSettings: normalizeDiceSettings(loadJSON(STORAGE_KEYS.diceSettings, DEFAULT_DICE_SETTINGS)),
-    coinSettings: loadJSON(STORAGE_KEYS.coinSettings, DEFAULT_COIN_SETTINGS),
+    coinSettings: { ...DEFAULT_COIN_SETTINGS, ...loadJSON(STORAGE_KEYS.coinSettings, DEFAULT_COIN_SETTINGS) },
     diceHistory: loadJSON(STORAGE_KEYS.diceHistory, []),
     coinHistory: loadJSON(STORAGE_KEYS.coinHistory, []),
     isRolling: false,
@@ -152,6 +152,7 @@ function cacheEls() {
     el.diceCountValue = document.getElementById("diceCountValue");
     el.diceTypeBtns = document.querySelectorAll(".dice-type-btn");
     el.coinCountValue = document.getElementById("coinCountValue");
+    el.coinEmphasizeSides = document.getElementById("coinEmphasizeSides");
     el.settingsCancelBtn = document.getElementById("settingsCancelBtn");
     el.settingsConfirmBtn = document.getElementById("settingsConfirmBtn");
 
@@ -1011,6 +1012,7 @@ function renderCoinStage() {
 
 function renderCoinFallback() {
     el.coinStage.innerHTML = "";
+    el.coinStage.classList.toggle("emphasize-sides", Boolean(state.coinSettings.emphasizeSides));
     const { count } = state.coinSettings;
 
     for (let i = 0; i < count; i++) {
@@ -1148,6 +1150,7 @@ function createCoinVisual() {
             transparent: true, alphaTest: 0.4,
         });
         const cap = new THREE.Mesh(new THREE.CircleGeometry(COIN_RADIUS, 64), material);
+        setCoinCapSide(cap, side);
         cap.rotation.x = index === 0 ? -Math.PI / 2 : Math.PI / 2;
         cap.position.y = (index === 0 ? 1 : -1) * (COIN_THICKNESS / 2 + 0.001);
         cap.receiveShadow = true;
@@ -1155,6 +1158,11 @@ function createCoinVisual() {
         return cap;
     });
     return { group, caps };
+}
+
+function setCoinCapSide(cap, side) {
+    cap.material.map = coin3d.textures[side];
+    cap.material.color.setHex(state.coinSettings.emphasizeSides && side === "tails" ? 0xc4c4c4 : 0xffffff);
 }
 
 function rebuildCoinScene() {
@@ -1229,8 +1237,8 @@ function playCoinToss(results) {
     coin3d.coins.forEach((coin, i) => {
         const topIsPositive = coinFaceNormalY(final[i].quaternion) > 0;
         const positiveSide = topIsPositive ? results[i] : (results[i] === "heads" ? "tails" : "heads");
-        coin.caps[0].material.map = coin3d.textures[positiveSide];
-        coin.caps[1].material.map = coin3d.textures[positiveSide === "heads" ? "tails" : "heads"];
+        setCoinCapSide(coin.caps[0], positiveSide);
+        setCoinCapSide(coin.caps[1], positiveSide === "heads" ? "tails" : "heads");
     });
     const applyFrame = (frame) => {
         coin3d.coins.forEach(({ group }, i) => {
@@ -1870,6 +1878,11 @@ function bindClearEvents() {
 
 function bindSettingsEvents() {
     el.settingsBtn.addEventListener("click", openSettingsModal);
+    el.coinEmphasizeSides.addEventListener("change", () => {
+        if (state.settingsTarget === "coin" && state.draft) {
+            state.draft.emphasizeSides = el.coinEmphasizeSides.checked;
+        }
+    });
 
     el.settingsModal.querySelectorAll(".stepper-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -1951,6 +1964,7 @@ function renderSettingsDraft() {
         });
     } else {
         el.coinCountValue.textContent = String(state.draft.count);
+        el.coinEmphasizeSides.checked = Boolean(state.draft.emphasizeSides);
     }
 }
 

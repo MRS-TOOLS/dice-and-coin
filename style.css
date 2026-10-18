@@ -284,6 +284,23 @@ button {
     border-color: #b88a40;
 }
 
+.coin-stage.emphasize-sides .coin-face--tails {
+    filter: brightness(0.77);
+}
+
+.coin-emphasis-setting {
+    cursor: pointer;
+    min-height: 44px;
+}
+
+.coin-emphasis-setting input {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+}
+
 .coin-fallback-notice {
     position: absolute;
     bottom: 8px;
