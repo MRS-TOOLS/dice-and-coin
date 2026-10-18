@@ -1161,8 +1161,18 @@ function createCoinVisual() {
 }
 
 function setCoinCapSide(cap, side) {
+    cap.userData.coinSide = side;
     cap.material.map = coin3d.textures[side];
     cap.material.color.setHex(state.coinSettings.emphasizeSides && side === "tails" ? 0xc4c4c4 : 0xffffff);
+}
+
+function updateCoinEmphasis() {
+    el.coinStage.classList.toggle("emphasize-sides", Boolean(state.coinSettings.emphasizeSides));
+    if (coin3d.status !== "ready") return;
+    coin3d.coins.forEach(({ caps }) => {
+        caps.forEach((cap) => setCoinCapSide(cap, cap.userData.coinSide));
+    });
+    if (!coin3d.needsCanvas) coin3d.renderer.render(coin3d.scene, coin3d.camera);
 }
 
 function rebuildCoinScene() {
@@ -1974,9 +1984,11 @@ function confirmSettings() {
         saveJSON(STORAGE_KEYS.diceSettings, state.diceSettings);
         renderDiceStage();
     } else if (state.settingsTarget === "coin") {
+        const countChanged = state.coinSettings.count !== state.draft.count;
         state.coinSettings = { ...state.draft };
         saveJSON(STORAGE_KEYS.coinSettings, state.coinSettings);
-        renderCoinStage();
+        if (countChanged) renderCoinStage();
+        else updateCoinEmphasis();
     }
     closeSettingsModal();
 }
