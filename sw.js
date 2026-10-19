@@ -1,6 +1,6 @@
 // Bump this version whenever a precached file changes.
 const CACHE_PREFIX = "dice-and-coin-";
-const CACHE_NAME = `${CACHE_PREFIX}20261019-5`;
+const CACHE_NAME = `${CACHE_PREFIX}20261019-6`;
 const ASSETS = [
     "./", "./index.html", "./style.css", "./script.js", "./pwa.js",
     "./manifest.webmanifest",
