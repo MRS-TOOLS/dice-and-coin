@@ -50,11 +50,13 @@ button {
 ======================================== */
 
 #app {
+    --app-padding: 16px;
     width: 100%;
     max-width: 600px;
     min-height: 100dvh;
     margin: 0 auto;
-    padding: 16px;
+    padding: var(--app-padding);
+    padding-top: calc(var(--app-padding) + env(safe-area-inset-top, 0px));
 
     /* 固定広告によるコンテンツ隠れ防止 */
     /*Webkit でflexbocが無視されるので、修正*/
@@ -659,7 +661,7 @@ button {
 @media (max-width: 600px) {
 
     #app {
-        padding: 14px;
+        --app-padding: 14px;
     }
 
     .dice-stage {
