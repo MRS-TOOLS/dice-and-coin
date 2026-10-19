@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <title>MRS WORKS</title>
+    <title>ダイス＆コイン</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -14,10 +14,15 @@
     <main id="app">
 
         <!-- ========================================
-             ヘッダー（タブ + 設定ボタン）
+             ヘッダー（タイトル + 切替 + 設定ボタン）
         ========================================= -->
         <header class="topbar">
-            <nav class="tabs" role="tablist">
+            <div class="app-title">
+                <p>MRS TOOLS</p>
+                <h1>ダイス＆コイン</h1>
+            </div>
+            <div class="topbar-actions">
+            <nav class="tabs" role="tablist" aria-label="ツールの種類">
                 <button class="tab-btn is-active" data-tab="dice" role="tab" aria-selected="true">DICE</button>
                 <button class="tab-btn" data-tab="coin" role="tab" aria-selected="false">COIN</button>
             </nav>
@@ -26,6 +31,7 @@
                     <path fill="currentColor" d="M19.14 12.94a7.14 7.14 0 0 0 .06-.94 7.14 7.14 0 0 0-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.3 7.3 0 0 0-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.14 7.14 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.6.22l2.39-.96c.5.4 1.04.71 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.59-.23 1.13-.54 1.63-.94l2.39.96c.21.08.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64ZM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Z"/>
                 </svg>
             </button>
+            </div>
         </header>
 
         <!-- ========================================
