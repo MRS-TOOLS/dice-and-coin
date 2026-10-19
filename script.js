@@ -24,8 +24,8 @@ const DEFAULT_COIN_SETTINGS = { count: 1, emphasizeSides: false };
 const DICE_TYPES = [6, 8, 10, 12, 20, 100];
 const HISTORY_LIMIT = 10;
 const ANIM_MS = 950;
-const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js";
-const CANNON_URL = "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js";
+const THREE_URL = "./assets/vendor/three/three.module.js";
+const CANNON_URL = "./assets/vendor/cannon-es/cannon-es.js";
 const PHYSICS_STEP = 1 / 60;
 const MAX_PHYSICS_STEPS = 420;
 const MIN_PHYSICS_STEPS = 120;
@@ -1191,6 +1191,25 @@ function coinFaceNormalY(quaternion) {
     return 1 - 2 * (quaternion.x * quaternion.x + quaternion.z * quaternion.z);
 }
 
+function isCoinSettled(body, index, recentFrames) {
+    // Contact impulses can keep velocities noisy on a motionless stack.
+    // Require a readable face and a stable pose throughout 0.3 seconds.
+    if (recentFrames.length < 19 || Math.abs(coinFaceNormalY(body.quaternion)) <= 0.5) return false;
+    return recentFrames.every((frame) => {
+        const previous = frame[index];
+        const dx = body.position.x - previous.position.x;
+        const dy = body.position.y - previous.position.y;
+        const dz = body.position.z - previous.position.z;
+        const q = body.quaternion;
+        const p = previous.quaternion;
+        const dot = Math.abs(q.x * p.x + q.y * p.y + q.z * p.z + q.w * p.w);
+        return dx * dx + dy * dy + dz * dz < 0.0001
+            && dot > Math.cos(Math.PI / 240) // Less than 1.5 degrees.
+            && Math.abs(coinFaceNormalY(p)) > 0.5
+            && coinFaceNormalY(q) * coinFaceNormalY(p) > 0;
+    });
+}
+
 function recordCoinToss(count) {
     for (let attempt = 0; attempt < 6; attempt += 1) {
         const { world, diceMaterial } = createPhysicsWorld();
@@ -1212,18 +1231,14 @@ function recordCoinToss(count) {
             return body;
         });
         const frames = [captureBodyStates(bodies)];
-        let quietSteps = 0;
         for (let step = 0; step < 600; step += 1) {
             world.step(PHYSICS_STEP);
-            const quiet = bodies.every((body) => Math.abs(coinFaceNormalY(body.quaternion)) > 0.995
-                && body.velocity.lengthSquared() < 0.0036
-                && body.angularVelocity.lengthSquared() < 0.0064);
-            quietSteps = quiet ? quietSteps + 1 : 0;
             frames.push(captureBodyStates(bodies));
-            if (step >= 100 && quietSteps >= 18) return frames;
+            const recentFrames = frames.slice(-19);
+            if (step >= 100 && bodies.every((body, index) => isCoinSettled(body, index, recentFrames))) return frames;
         }
     }
-    throw new Error("コインが平らに静止する投げ方を生成できませんでした");
+    throw new Error("コインの表裏を判別できる静止状態を生成できませんでした");
 }
 
 function playCoinToss(results) {
