@@ -1191,12 +1191,23 @@ function coinFaceNormalY(quaternion) {
     return 1 - 2 * (quaternion.x * quaternion.x + quaternion.z * quaternion.z);
 }
 
-function isCoinSettled(body) {
-    // A stacked coin can rest at an angle. Accept a clearly upward-facing
-    // side (less than 60 degrees from horizontal) without rotating it flat.
-    return Math.abs(coinFaceNormalY(body.quaternion)) > 0.5
-        && body.velocity.lengthSquared() < 0.0036
-        && body.angularVelocity.lengthSquared() < 0.0064;
+function isCoinSettled(body, index, recentFrames) {
+    // Contact impulses can keep velocities noisy on a motionless stack.
+    // Require a readable face and a stable pose throughout 0.3 seconds.
+    if (recentFrames.length < 19 || Math.abs(coinFaceNormalY(body.quaternion)) <= 0.5) return false;
+    return recentFrames.every((frame) => {
+        const previous = frame[index];
+        const dx = body.position.x - previous.position.x;
+        const dy = body.position.y - previous.position.y;
+        const dz = body.position.z - previous.position.z;
+        const q = body.quaternion;
+        const p = previous.quaternion;
+        const dot = Math.abs(q.x * p.x + q.y * p.y + q.z * p.z + q.w * p.w);
+        return dx * dx + dy * dy + dz * dz < 0.0001
+            && dot > Math.cos(Math.PI / 240) // Less than 1.5 degrees.
+            && Math.abs(coinFaceNormalY(p)) > 0.5
+            && coinFaceNormalY(q) * coinFaceNormalY(p) > 0;
+    });
 }
 
 function recordCoinToss(count) {
@@ -1220,13 +1231,11 @@ function recordCoinToss(count) {
             return body;
         });
         const frames = [captureBodyStates(bodies)];
-        let quietSteps = 0;
         for (let step = 0; step < 600; step += 1) {
             world.step(PHYSICS_STEP);
-            const quiet = bodies.every(isCoinSettled);
-            quietSteps = quiet ? quietSteps + 1 : 0;
             frames.push(captureBodyStates(bodies));
-            if (step >= 100 && quietSteps >= 18) return frames;
+            const recentFrames = frames.slice(-19);
+            if (step >= 100 && bodies.every((body, index) => isCoinSettled(body, index, recentFrames))) return frames;
         }
     }
     throw new Error("コインの表裏を判別できる静止状態を生成できませんでした");
