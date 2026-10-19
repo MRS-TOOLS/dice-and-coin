@@ -782,7 +782,11 @@ function createFaceTexture(value, sides, inkColor) {
         context.font = `900 ${textSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.fillText(String(value), 64, 66);
+        context.fillText(String(value), 64, String(value) === "9" ? 62 : 66);
+        if (String(value) === "9") {
+            // Keep the reading direction clear when a numbered face is rotated.
+            context.fillRect(48, 94, 32, 5);
+        }
     }
 
     const texture = new THREE.CanvasTexture(canvas);
