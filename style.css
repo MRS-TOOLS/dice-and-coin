@@ -412,8 +412,7 @@ button {
 ======================================== */
 
 .history-section {
-    /*flex: 1;*/
-    margin-bottom: calc(var(--ad-height) + env(safe-area-inset-bottom) + 20px);
+    margin-bottom: 20px;
 }
 
 .history-header {
