@@ -1191,6 +1191,14 @@ function coinFaceNormalY(quaternion) {
     return 1 - 2 * (quaternion.x * quaternion.x + quaternion.z * quaternion.z);
 }
 
+function isCoinSettled(body) {
+    // A stacked coin can rest at an angle. Accept a clearly upward-facing
+    // side (less than 60 degrees from horizontal) without rotating it flat.
+    return Math.abs(coinFaceNormalY(body.quaternion)) > 0.5
+        && body.velocity.lengthSquared() < 0.0036
+        && body.angularVelocity.lengthSquared() < 0.0064;
+}
+
 function recordCoinToss(count) {
     for (let attempt = 0; attempt < 6; attempt += 1) {
         const { world, diceMaterial } = createPhysicsWorld();
@@ -1215,15 +1223,13 @@ function recordCoinToss(count) {
         let quietSteps = 0;
         for (let step = 0; step < 600; step += 1) {
             world.step(PHYSICS_STEP);
-            const quiet = bodies.every((body) => Math.abs(coinFaceNormalY(body.quaternion)) > 0.995
-                && body.velocity.lengthSquared() < 0.0036
-                && body.angularVelocity.lengthSquared() < 0.0064);
+            const quiet = bodies.every(isCoinSettled);
             quietSteps = quiet ? quietSteps + 1 : 0;
             frames.push(captureBodyStates(bodies));
             if (step >= 100 && quietSteps >= 18) return frames;
         }
     }
-    throw new Error("コインが平らに静止する投げ方を生成できませんでした");
+    throw new Error("コインの表裏を判別できる静止状態を生成できませんでした");
 }
 
 function playCoinToss(results) {
