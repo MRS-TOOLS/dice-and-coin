@@ -783,7 +783,7 @@ function createFaceTexture(value, sides, inkColor) {
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.fillText(String(value), 64, 66);
-        if (String(value) === "6" || String(value) === "9") {
+        if (String(value) === "9") {
             // Keep the reading direction clear when a numbered face is rotated.
             context.fillRect(44, 106, 40, 6);
         }
