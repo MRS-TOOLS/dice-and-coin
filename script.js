@@ -3,10 +3,6 @@
 // Main JavaScript
 // ========================================
 
-document.addEventListener("DOMContentLoaded", () => {
-    init();
-});
-
 // ========================================
 // Constants
 // ========================================
@@ -2001,3 +1997,7 @@ function confirmSettings() {
     }
     closeSettingsModal();
 }
+
+// The async module is placed after all app elements; do not wait for advertising or DOMContentLoaded.
+init();
+
