@@ -54,3 +54,14 @@ script.js    ロジック（乱数生成・状態管理・localStorage）
 - `assets/images/lincoln-memorial-heads.webp` と `lincoln-memorial-tails.webp` は、1964年のリンカーン・メモリアルペニーを参考にAI生成したゲーム用画像です。リンカーンを表、リンカーン記念堂を裏として扱います。画像は実物の厳密な複製ではありません。3Dの側面形状はコードで生成します。
 - `assets/images/washington-quarter-heads.webp` と `washington-quarter-tails.webp` は、1965年のワシントン・クォーター（旧来のワシの裏面）を参考にAI生成したゲーム用画像です。将来の称号解放用に保持し、現在の初期コインや選択肢には使いません。
 - `assets/images/liberty-heads.webp` と `liberty-tails.webp` は、1900年リバティヘッド20ドル金貨（ダブルイーグル）を参考にAI生成したゲーム用画像です。将来の称号解放用に保持し、現在の初期コインや選択肢としては使いません。称号条件・解放処理・コイン選択は未実装です。
+
+## 弱回線耐性（2026-10-20）
+
+通常オンライン・低速／不安定通信・完全オフラインの3状態で、取得済み本体から起動します。アプリmoduleは全要素と広告コンテナを配置した後にasync実行し、DOMContentLoadedや広告応答を待ちません。独立したpwa.jsも広告scriptより前に実行します。広告タグ・IDは維持します。
+
+シェルは全ファイル取得・保存後に採用します。更新SWは既存画面をすべて閉じるまで待ち、投擲中に強制切替しません。キャッシュ欠損時の取得は接続・本文を含め8秒で打ち切り、入口の取得失敗には再試行案内を返します。キャッシュを通信結果で個別更新しません。キャッシュ版・HTML参照・SW対象リストは同時に更新してください。
+
+3Dライブラリ・コイン画像の既存8秒制限と数値表示へのフォールバック、設定・履歴の保存キー／形式、広告、Cloudflare設定は維持します。旧キャッシュ削除はdice-and-coin-の範囲だけで、localStorageは削除しません。初回未キャッシュ・旧SW制御中には今回の新SWの制限は適用されません。
+
+テストはNode.js 24以降で、`npm install --no-save --package-lock=false jsdom@30.1.3` の後に `node --experimental-vm-modules --test tests/*.test.cjs`。通信・DOM・module起動・3Dにはモックを使います。iPhone / Safari実機・ホーム画面起動・実広告・実3D描画は別途確認が必要です。
+
