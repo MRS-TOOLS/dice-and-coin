@@ -31,6 +31,7 @@ body {
     margin: 0;
     padding: 0;
     overscroll-behavior: none;
+    touch-action: manipulation;
 }
 
 body {
@@ -228,6 +229,13 @@ button {
     isolation: isolate;
 }
 
+.dice-stage,
+.action-btn {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 .dice-stage canvas {
     display: block;
     width: 100%;
@@ -404,7 +412,7 @@ button {
 
 .action-btn:disabled {
     opacity: 0.5;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 /* ========================================
