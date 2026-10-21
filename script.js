@@ -1,7 +1,7 @@
 // Application entry: UI wiring, settings and history.
-import { state, el, STORAGE_KEYS, DICE_TYPES, HISTORY_LIMIT, normalizeDiceSettings, saveJSON, clamp } from "./js/shared.js?v=20261021-1";
-import { createDiceController } from "./js/dice.js?v=20261021-1";
-import { createCoinController } from "./js/coin.js?v=20261021-1";
+import { state, el, STORAGE_KEYS, DICE_TYPES, HISTORY_LIMIT, normalizeDiceSettings, saveJSON, clamp } from "./js/shared.js?v=20261021-2";
+import { createDiceController } from "./js/dice.js?v=20261021-2";
+import { createCoinController } from "./js/coin.js?v=20261021-2";
 
 const dice = createDiceController({ completeDiceRoll, setRollingUI });
 const coin = createCoinController({ dice, completeCoinToss, setTossingUI });

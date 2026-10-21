@@ -2,8 +2,8 @@
 import {
     THREE, CANNON, state, el, COIN_IMAGES, COIN_RADIUS, COIN_THICKNESS,
     PHYSICS_STEP, ANIM_MS, secureRandomInt, randomBetween, captureBodyStates,
-} from "./shared.js?v=20261021-1";
-import { createPhysicsWorld } from "./scene.js?v=20261021-1";
+} from "./shared.js?v=20261021-2";
+import { createPhysicsWorld } from "./scene.js?v=20261021-2";
 
 export function createCoinController({ dice, completeCoinToss, setTossingUI }) {
     const dice3d = dice.state;

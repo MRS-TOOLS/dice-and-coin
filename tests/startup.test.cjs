@@ -25,7 +25,7 @@ async function openApp({ seed = saved, mode = 'failure', registrationFails = fal
   let dom, adRequested = false, loaded = false, initialized = 0;
   // jsdom does not run module scripts: this adapter evaluates the actual module
   // at the loader position. It tests app behavior, not browser async scheduling.
-  const adapted = html.replace(/<script type="module" async src="script.js\?v=20261021-1"><\/script>/, '<script src="/__module-start.js"></script>');
+  const adapted = html.replace(/<script type="module" async src="script.js\?v=20261021-2"><\/script>/, '<script src="/__module-start.js"></script>');
   const console = new VirtualConsole();
   console.on('jsdomError', error => errors.push(error));
   console.on('log', message => { if (message === 'DICE & COIN initialized') initialized++; });
@@ -76,7 +76,7 @@ async function openApp({ seed = saved, mode = 'failure', registrationFails = fal
             modules.set(url, module);
             return module;
           }
-          const module = loadModule('https://app.example/script.js?v=20261021-1');
+          const module = loadModule('https://app.example/script.js?v=20261021-2');
           await module.link((specifier, parent) => loadModule(new URL(specifier, parent.identifier).href));
           await module.evaluate();
         })().catch(error => errors.push(error));
@@ -95,8 +95,8 @@ test('app and independent SW loader precede unchanged blocking ad script', () =>
   const ad = scripts.filter(s => s.startsWith('https://adm.shinobi.jp/'));
   assert.deepEqual(ad, ['https://adm.shinobi.jp/s/1596a166ea799d6e2c02f5a97ee144c2']);
   assert.ok(scripts.indexOf('pwa.js') < scripts.indexOf(ad[0]));
-  assert.ok(scripts.indexOf('script.js?v=20261021-1') < scripts.indexOf(ad[0]));
-  assert.match(html, /<script type="module" async src="script.js\?v=20261021-1">/);
+  assert.ok(scripts.indexOf('script.js?v=20261021-2') < scripts.indexOf(ad[0]));
+  assert.match(html, /<script type="module" async src="script.js\?v=20261021-2">/);
 });
 for (const mode of ['failure', 'hang']) {
   for (const registrationFails of [false, true]) {
