@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
 const root = 'https://clock.example/';
-const current = 'dice-and-coin-20261021-2';
+const current = 'dice-and-coin-20261021-3';
 const never = () => new Promise(() => {});
 
 function harness({ network = async () => new Response('new'), brokenCache = false, failPut = false } = {}) {
@@ -62,11 +62,11 @@ for (const [state, network] of [
   test(`cached shell starts without network in ${state} state`, async () => {
     const h = harness({ network });
     await h.seed();
-    await h.seed(root + 'script.js?v=20261021-2', 'saved-js');
+    await h.seed(root + 'script.js?v=20261021-3', 'saved-js');
     for (const url of [root, root + '?from=home', root + 'index.html?from=home']) {
       assert.equal(await (await h.request(url)).text(), 'saved');
     }
-    assert.equal(await (await h.request(root + 'script.js?v=20261021-2', 'same-origin')).text(), 'saved-js');
+    assert.equal(await (await h.request(root + 'script.js?v=20261021-3', 'same-origin')).text(), 'saved-js');
     assert.equal(h.calls.length, 0);
     assert.equal(h.timerDelays.length, 0);
   });
@@ -102,7 +102,7 @@ for (const [failure, network] of [
 
 test('missing JS fails as a resource instead of receiving HTML', async () => {
   const h = harness({ network: never });
-  assert.equal((await h.request(root + 'script.js?v=20261021-2', 'same-origin')).type, 'error');
+  assert.equal((await h.request(root + 'script.js?v=20261021-3', 'same-origin')).type, 'error');
 });
 
 test('cache storage failure still permits a network start', async () => {
@@ -149,7 +149,7 @@ test('every statically imported app module is in the same offline release withou
     }
     checked.add(url);
   }
-  visit(root + 'script.js?v=20261021-2');
+  visit(root + 'script.js?v=20261021-3');
   assert.equal(checked.size, 5);
 });
 

@@ -1,7 +1,7 @@
 // Application entry: UI wiring, settings and history.
-import { state, el, STORAGE_KEYS, DICE_TYPES, HISTORY_LIMIT, normalizeDiceSettings, saveJSON, clamp } from "./js/shared.js?v=20261021-2";
-import { createDiceController } from "./js/dice.js?v=20261021-2";
-import { createCoinController } from "./js/coin.js?v=20261021-2";
+import { state, el, STORAGE_KEYS, DICE_TYPES, HISTORY_LIMIT, normalizeDiceSettings, saveJSON, clamp } from "./js/shared.js?v=20261021-3";
+import { createDiceController } from "./js/dice.js?v=20261021-3";
+import { createCoinController } from "./js/coin.js?v=20261021-3";
 
 const dice = createDiceController({ completeDiceRoll, setRollingUI });
 const coin = createCoinController({ dice, completeCoinToss, setTossingUI });
@@ -49,6 +49,7 @@ function init() {
 
     bindTabEvents();
     bindActionEvents();
+    bindStageTouchEvents();
     bindSettingsEvents();
     bindClearEvents();
 
@@ -122,6 +123,51 @@ function getActiveTab() {
 function bindActionEvents() {
     el.rollBtn.addEventListener("click", rollDice);
     el.tossBtn.addEventListener("click", tossCoin);
+}
+
+function bindStageTouchEvents() {
+    const surfaces = [el.diceStage, el.coinStage, el.rollBtn, el.tossBtn];
+    let tap = null;
+    const surfaceFor = (target) => surfaces.find((surface) => surface.contains(target));
+    // Cancel native touch gestures before Safari can zoom, scroll or synthesize
+    // a second click. Keep mouse/keyboard clicks and gestures elsewhere intact.
+    document.addEventListener("touchstart", (event) => {
+        const surface = surfaceFor(event.target);
+        if (!surface) { tap = null; return; }
+        if (event.cancelable) event.preventDefault();
+        if (event.touches.length !== 1) { tap = null; return; }
+        const touch = event.touches[0];
+        tap = {
+            surface, id: touch.identifier, x: touch.clientX, y: touch.clientY,
+            activate: surface.matches(".action-btn") && !surface.disabled,
+        };
+    }, { capture: true, passive: false });
+    document.addEventListener("touchmove", (event) => {
+        if (!tap) return;
+        if (event.cancelable) event.preventDefault();
+        const touch = Array.from(event.touches).find((item) => item.identifier === tap.id);
+        if (event.touches.length !== 1 || !touch
+            || Math.hypot(touch.clientX - tap.x, touch.clientY - tap.y) > 10) {
+            tap.activate = false;
+        }
+    }, { capture: true, passive: false });
+    document.addEventListener("touchend", (event) => {
+        if (!tap) return;
+        if (event.cancelable) event.preventDefault();
+        const current = tap;
+        tap = null;
+        const touch = Array.from(event.changedTouches).find((item) => item.identifier === current.id);
+        if (!touch || event.touches.length || !current.activate || current.surface.disabled) return;
+        const bounds = current.surface.getBoundingClientRect();
+        if (touch.clientX >= bounds.left && touch.clientX <= bounds.right
+            && touch.clientY >= bounds.top && touch.clientY <= bounds.bottom) {
+            current.surface.click();
+        }
+    }, { capture: true, passive: false });
+    document.addEventListener("touchcancel", () => { tap = null; }, { capture: true });
+    document.addEventListener("dblclick", (event) => {
+        if (surfaceFor(event.target)) event.preventDefault();
+    }, { capture: true });
 }
 
 function completeDiceRoll(results) {

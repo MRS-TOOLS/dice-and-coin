@@ -2,18 +2,18 @@
 
 // Publish the shell as one release. Bump this whenever a shell file changes.
 const CACHE_PREFIX = "dice-and-coin-";
-const CACHE_NAME = CACHE_PREFIX + "20261021-2";
+const CACHE_NAME = CACHE_PREFIX + "20261021-3";
 const NETWORK_TIMEOUT_MS = 8000;
 const ROOT = new URL("./", self.registration.scope);
 const INDEX_PATH = new URL("index.html", ROOT).pathname;
 const APP_FILES = [
   "./",
   "./style.css",
-  "./script.js?v=20261021-2",
-  "./js/shared.js?v=20261021-2",
-  "./js/scene.js?v=20261021-2",
-  "./js/dice.js?v=20261021-2",
-  "./js/coin.js?v=20261021-2",
+  "./script.js?v=20261021-3",
+  "./js/shared.js?v=20261021-3",
+  "./js/scene.js?v=20261021-3",
+  "./js/dice.js?v=20261021-3",
+  "./js/coin.js?v=20261021-3",
   "./pwa.js",
   "./manifest.webmanifest",
   "./assets/icons/icon-180.png",

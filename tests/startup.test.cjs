@@ -25,7 +25,7 @@ async function openApp({ seed = saved, mode = 'failure', registrationFails = fal
   let dom, adRequested = false, loaded = false, initialized = 0;
   // jsdom does not run module scripts: this adapter evaluates the actual module
   // at the loader position. It tests app behavior, not browser async scheduling.
-  const adapted = html.replace(/<script type="module" async src="script.js\?v=20261021-2"><\/script>/, '<script src="/__module-start.js"></script>');
+  const adapted = html.replace(/<script type="module" async src="script.js\?v=20261021-3"><\/script>/, '<script src="/__module-start.js"></script>');
   const console = new VirtualConsole();
   console.on('jsdomError', error => errors.push(error));
   console.on('log', message => { if (message === 'DICE & COIN initialized') initialized++; });
@@ -76,7 +76,7 @@ async function openApp({ seed = saved, mode = 'failure', registrationFails = fal
             modules.set(url, module);
             return module;
           }
-          const module = loadModule('https://app.example/script.js?v=20261021-2');
+          const module = loadModule('https://app.example/script.js?v=20261021-3');
           await module.link((specifier, parent) => loadModule(new URL(specifier, parent.identifier).href));
           await module.evaluate();
         })().catch(error => errors.push(error));
@@ -90,13 +90,53 @@ async function openApp({ seed = saved, mode = 'failure', registrationFails = fal
 function snapshot(w) {
   return Object.fromEntries(Object.keys(saved).map(key => [key, JSON.parse(w.localStorage.getItem(key))]));
 }
+test('stage and action touches cancel native gestures without duplicate actions; other page touches remain available', async () => {
+  const app = await openApp();
+  try {
+    const w = app.dom.window, d = w.document;
+    const button = d.getElementById('rollBtn');
+    button.getBoundingClientRect = () => ({ left: 0, right: 100, top: 0, bottom: 100 });
+    let clicks = 0;
+    button.addEventListener('click', () => clicks++);
+    const finger = (x = 20) => ({ identifier: 1, clientX: x, clientY: 20 });
+    const send = (target, type, points = [finger()]) => {
+      const e = new w.Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(e, {
+        touches: { value: type === 'touchend' || type === 'touchcancel' ? [] : points },
+        changedTouches: { value: points }
+      });
+      target.dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    const stage = d.getElementById('diceStage');
+    for (let i = 0; i < 2; i++) {
+      assert.ok(send(stage, 'touchstart'));
+      assert.ok(send(stage, 'touchend'));
+    }
+    for (let i = 0; i < 2; i++) {
+      assert.ok(send(button, 'touchstart'));
+      assert.ok(send(button, 'touchend'));
+    }
+    assert.equal(clicks, 1);
+    assert.equal(button.disabled, true);
+    button.disabled = false;
+    send(button, 'touchstart'); send(button, 'touchmove', [finger(60)]); send(button, 'touchend');
+    assert.equal(clicks, 1, 'a drag must not activate the button');
+    send(button, 'touchstart', [finger(), { ...finger(), identifier: 2 }]); send(button, 'touchend');
+    assert.equal(clicks, 1, 'a multi-touch must not activate the button');
+    send(button, 'touchstart'); send(button, 'touchcancel'); send(button, 'touchend');
+    assert.equal(clicks, 1);
+    assert.equal(send(d.body, 'touchstart'), false);
+    assert.equal(send(d.body, 'touchend'), false);
+  } finally { app.dom.window.close(); }
+});
 test('app and independent SW loader precede unchanged blocking ad script', () => {
   const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"[^>]*>/g)].map(m => m[1]);
   const ad = scripts.filter(s => s.startsWith('https://adm.shinobi.jp/'));
   assert.deepEqual(ad, ['https://adm.shinobi.jp/s/1596a166ea799d6e2c02f5a97ee144c2']);
   assert.ok(scripts.indexOf('pwa.js') < scripts.indexOf(ad[0]));
-  assert.ok(scripts.indexOf('script.js?v=20261021-2') < scripts.indexOf(ad[0]));
-  assert.match(html, /<script type="module" async src="script.js\?v=20261021-2">/);
+  assert.ok(scripts.indexOf('script.js?v=20261021-3') < scripts.indexOf(ad[0]));
+  assert.match(html, /<script type="module" async src="script.js\?v=20261021-3">/);
 });
 for (const mode of ['failure', 'hang']) {
   for (const registrationFails of [false, true]) {

@@ -4,8 +4,8 @@ import {
     PHYSICS_STEP, MAX_PHYSICS_STEPS, MIN_PHYSICS_STEPS, MAX_ROLL_ATTEMPTS,
     TABLE_WIDTH, TABLE_DEPTH, load3DLibraries,
     secureRandomInt, randomBetween, captureBodyStates,
-} from "./shared.js?v=20261021-2";
-import { addWoodenTableFrame, createPhysicsWorld, disposeObject3D } from "./scene.js?v=20261021-2";
+} from "./shared.js?v=20261021-3";
+import { addWoodenTableFrame, createPhysicsWorld, disposeObject3D } from "./scene.js?v=20261021-3";
 
 export function createDiceController({ completeDiceRoll, setRollingUI }) {
     const dice3d = {

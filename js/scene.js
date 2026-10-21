@@ -1,5 +1,5 @@
 // Shared wooden table, collision world and resource disposal.
-import { THREE, CANNON, TABLE_WIDTH, TABLE_DEPTH } from "./shared.js?v=20261021-2";
+import { THREE, CANNON, TABLE_WIDTH, TABLE_DEPTH } from "./shared.js?v=20261021-3";
 
 export function addWoodenTableFrame(scene, renderer = null) {
     const texture = createWoodTexture(renderer);
