@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
 const root = 'https://clock.example/';
-const current = 'dice-and-coin-20261020-1';
+const current = 'dice-and-coin-20261021-1';
 const never = () => new Promise(() => {});
 
 function harness({ network = async () => new Response('new'), brokenCache = false, failPut = false } = {}) {
@@ -62,11 +62,11 @@ for (const [state, network] of [
   test(`cached shell starts without network in ${state} state`, async () => {
     const h = harness({ network });
     await h.seed();
-    await h.seed(root + 'script.js?v=20261020-1', 'saved-js');
+    await h.seed(root + 'script.js?v=20261021-1', 'saved-js');
     for (const url of [root, root + '?from=home', root + 'index.html?from=home']) {
       assert.equal(await (await h.request(url)).text(), 'saved');
     }
-    assert.equal(await (await h.request(root + 'script.js?v=20261020-1', 'same-origin')).text(), 'saved-js');
+    assert.equal(await (await h.request(root + 'script.js?v=20261021-1', 'same-origin')).text(), 'saved-js');
     assert.equal(h.calls.length, 0);
     assert.equal(h.timerDelays.length, 0);
   });
@@ -102,7 +102,7 @@ for (const [failure, network] of [
 
 test('missing JS fails as a resource instead of receiving HTML', async () => {
   const h = harness({ network: never });
-  assert.equal((await h.request(root + 'script.js?v=20261020-1', 'same-origin')).type, 'error');
+  assert.equal((await h.request(root + 'script.js?v=20261021-1', 'same-origin')).type, 'error');
 });
 
 test('cache storage failure still permits a network start', async () => {
@@ -128,10 +128,29 @@ test('complete installation caches the canonical shell and waits for existing wi
   await h.lifecycle('install');
   assert.equal(h.skips, 0);
   assert.equal(h.claims, 0);
-  assert.equal(h.stores.get(current).size, 14);
+  assert.equal(h.stores.get(current).size, 18);
   assert.equal(h.stores.get(current).has(root + 'index.html'), false);
   assert.equal(h.stores.has('dice-and-coin-previous'), true);
   assert.ok(h.calls.every(c => c.request.cache === 'reload'));
+});
+
+test('every statically imported app module is in the same offline release without circular imports', async () => {
+  const h = harness();
+  await h.lifecycle('install');
+  const checked = new Set();
+  function visit(url, ancestors = []) {
+    assert.equal(ancestors.includes(url), false, `Circular import: ${[...ancestors, url].join(' -> ')}`);
+    if (checked.has(url)) return;
+    assert.ok(h.stores.get(current).has(url), `Module missing from offline cache: ${url}`);
+    const filename = path.join(__dirname, '..', new URL(url).pathname.slice(1));
+    const module = new vm.SourceTextModule(fs.readFileSync(filename, 'utf8'));
+    for (const dependency of module.dependencySpecifiers) {
+      visit(new URL(dependency, url).href, [...ancestors, url]);
+    }
+    checked.add(url);
+  }
+  visit(root + 'script.js?v=20261021-1');
+  assert.equal(checked.size, 5);
 });
 
 for (const failure of ['HTTP error', 'connection hang', 'body hang', 'quota']) {
