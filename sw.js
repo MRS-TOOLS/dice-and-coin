@@ -2,7 +2,7 @@
 
 // Publish the shell as one release. Bump this whenever a shell file changes.
 const CACHE_PREFIX = "dice-and-coin-";
-const CACHE_NAME = CACHE_PREFIX + "20261021-3";
+const CACHE_NAME = CACHE_PREFIX + "20261104-analytics-1";
 const NETWORK_TIMEOUT_MS = 8000;
 const ROOT = new URL("./", self.registration.scope);
 const INDEX_PATH = new URL("index.html", ROOT).pathname;
